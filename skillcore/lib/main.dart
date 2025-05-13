@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:skillcore/screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+
+late Map<String, dynamic> env;
 
 void main() async {
   /// TODO: update Supabase credentials with your own
+  WidgetsFlutterBinding.ensureInitialized();
+  final envString = await rootBundle.loadString('assets/env.json');
+  env = json.decode(envString);
   await Supabase.initialize(
-    url: 'https://irsdddmnrofejnhjezmk.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlyc2RkZG1ucm9mZWpuaGplem1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMzIyMDksImV4cCI6MjA2MjcwODIwOX0.HQ-mjuMPFvWOj76F49YIuNaEOVd4MrpIp8ZPbGtSBmc',
+    url: env['SUPABASE_URL'],
+    anonKey: env['SUPABASE_ANON_KEY'],
   );
   runApp(const MyApp());
 }

@@ -3,6 +3,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:skillcore/main.dart';
 import 'package:skillcore/screens/profile_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,42 +25,31 @@ class _LoginScreenState extends State<LoginScreen> {
       final event = data.event;
       if (event == AuthChangeEvent.signedIn) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const ProfileScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
         );
       }
     });
   }
 
   Future<AuthResponse> _googleSignIn() async {
-    /// TODO: update the Web client ID with your own.
-    ///
-    /// Web Client ID that you registered with Google Cloud.
-    const webClientId = '40529272770-rubg0b0r54ml97g0q7ddt6o00rqe4s20.apps.googleusercontent.com';
+    final webClientId = env['GOOGLE_WEB_CLIENT_ID'];
+    final iosClientId = 'your-ios-client-id.apps.googleusercontent.com';
 
-    /// TODO: update the iOS client ID with your own.
-    ///
-    /// iOS Client ID that you registered with Google Cloud.
-    const iosClientId = 'my-ios.apps.googleusercontent.com';
+    final GoogleSignIn googleSignIn =
+        kIsWeb
+            ? GoogleSignIn(clientId: webClientId)
+            : (Platform.isIOS
+                ? GoogleSignIn(serverClientId: iosClientId)
+                : GoogleSignIn()); // Android works without explicitly setting clientId
 
-    // Google sign in on Android will work without providing the Android
-    // Client ID registered on Google Cloud.
-
-    final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: webClientId,
-      // serverClientId: webClientId,
-    );
     final googleUser = await googleSignIn.signIn();
-    final googleAuth = await googleUser!.authentication;
-    final accessToken = googleAuth.accessToken;
-    final idToken = googleAuth.idToken;
+    final googleAuth = await googleUser?.authentication;
 
-    if (accessToken == null) {
-      throw 'No Access Token found.';
-    }
-    if (idToken == null) {
-      throw 'No ID Token found.';
+    final accessToken = googleAuth?.accessToken;
+    final idToken = googleAuth?.idToken;
+
+    if (accessToken == null || idToken == null) {
+      throw 'Google Sign-In failed: Missing tokens.';
     }
 
     return supabase.auth.signInWithIdToken(
@@ -71,9 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: const Text('Login')),
       body: Center(
         child: ElevatedButton(
           onPressed: _googleSignIn,
