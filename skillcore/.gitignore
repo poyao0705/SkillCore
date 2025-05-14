@@ -1,5 +1,6 @@
 # Miscellaneous
 .env
+asset/env.json
 .DS_Store
 *.class
 *.log
