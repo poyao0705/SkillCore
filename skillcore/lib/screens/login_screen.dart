@@ -31,32 +31,43 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  Future<AuthResponse> _googleSignIn() async {
-    final webClientId = env['GOOGLE_WEB_CLIENT_ID'];
-    final iosClientId = 'your-ios-client-id.apps.googleusercontent.com';
+  Future<AuthResponse?> _googleSignIn() async {
+    try {
+      final webClientId = env['GOOGLE_WEB_CLIENT_ID'];
+      final iosClientId = env['GOOGLE_IOS_CLIENT_ID'];
 
-    final GoogleSignIn googleSignIn =
-        kIsWeb
-            ? GoogleSignIn(clientId: webClientId)
-            : (Platform.isIOS
-                ? GoogleSignIn(serverClientId: iosClientId)
-                : GoogleSignIn()); // Android works without explicitly setting clientId
+      final googleSignIn =
+          kIsWeb
+              ? GoogleSignIn(clientId: webClientId)
+              : Platform.isIOS
+              ? GoogleSignIn(serverClientId: iosClientId)
+              : GoogleSignIn();
 
-    final googleUser = await googleSignIn.signIn();
-    final googleAuth = await googleUser?.authentication;
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        debugPrint('❌ User canceled Google Sign-In');
+        return null;
+      }
 
-    final accessToken = googleAuth?.accessToken;
-    final idToken = googleAuth?.idToken;
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
 
-    if (accessToken == null || idToken == null) {
-      throw 'Google Sign-In failed: Missing tokens.';
+      if (accessToken == null || idToken == null) {
+        throw Exception('Google Sign-In failed: Missing tokens.');
+      }
+
+      debugPrint('✅ Google Sign-In success: $idToken');
+      return await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+    } catch (e, stack) {
+      debugPrint('❌ Google Sign-In error: $e');
+      debugPrint('🪵 Stack: $stack');
+      return null;
     }
-
-    return supabase.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-      accessToken: accessToken,
-    );
   }
 
   @override
