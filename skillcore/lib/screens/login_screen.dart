@@ -75,7 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
       body: Center(
-        child: ElevatedButton(
+        child: 
+        ElevatedButton(
           onPressed: _googleSignIn,
           child: const Text('Google login'),
         ),
